@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_19_hive_demo/todos/bloc/todo_bloc.dart';
 import 'package:flutter_19_hive_demo/todos/views/add_todo.dart';
@@ -15,47 +13,65 @@ class HomeTodoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => TodoBloc()..add(TodoLoadDataEvent()),
-      child: BlocBuilder<TodoBloc, TodoState>(
-        builder: (context, state) {
-          if (state is TodoLoadDataSuccessState) {
-            return const HomeTodoView();
-          }
-          return Expanded(
-            child: (Platform.isIOS)
-                ? const Center(child: CupertinoActivityIndicator())
-                : const Center(child: CircularProgressIndicator()),
-          );
-        },
-      ),
+      create: (_) => TodoBloc(),
+      child: const HomeView(),
     );
   }
 }
 
-class HomeTodoView extends StatefulWidget {
-  const HomeTodoView({Key? key}) : super(key: key);
+class HomeView extends StatefulWidget {
+  const HomeView({Key? key}) : super(key: key);
 
   @override
-  _HomeTodoViewState createState() => _HomeTodoViewState();
+  _HomeViewState createState() => _HomeViewState();
 }
 
-class _HomeTodoViewState extends State<HomeTodoView> {
+class _HomeViewState extends State<HomeView> {
+  final Map<int, Widget> _children = {
+    0: const Text('All'),
+    1: const Text('Completed'),
+    2: const Text('Incomplete'),
+  };
+
+  int _currentSelection = 0;
+
   final List<Widget> _listWidgets = const [
-    AllTodoPage(),
+    AllTodosView(),
     CompletedTodosPage(),
     IncompleteTodosPage(),
   ];
-  int _currentSelection = 0;
 
-  void _gotoAddTodoPage() {
-    Navigator.pushNamed(context, AddTodoPage.routeName);
-  }
+  TodoType typeScreen = TodoType.all;
+
+  final List<int> _disabledIndices = [];
 
   void _onSegmentChosen(int index) {
-    context.read<TodoBloc>().add(TodoReloadDataEvent());
+    switch (index) {
+      case 0:
+        typeScreen = TodoType.all;
+        break;
+      case 1:
+        typeScreen = TodoType.completed;
+        break;
+      case 2:
+        typeScreen = TodoType.incomplete;
+        break;
+      default:
+        break;
+    }
+    setState(() {
+      _currentSelection = index;
+    });
   }
 
-  Widget _buildMaterialSegmentedControl() {
+  void _gotoAddTodoPage() async {
+    await Navigator.pushNamed(context, AddTodoPage.routeName);
+    setState(() {
+      context.read<TodoBloc>().add(TodoReloadDataEvent(typeScreen));
+    });
+  }
+
+  Widget _materialSegmentedControl() {
     return Expanded(
       child: MaterialSegmentedControl(
         children: _children,
@@ -67,11 +83,7 @@ class _HomeTodoViewState extends State<HomeTodoView> {
         disabledChildren: _disabledIndices,
         onSegmentChosen: (i) {
           int index = i as int;
-
           _onSegmentChosen(index);
-          setState(() {
-            _currentSelection = i;
-          });
         },
       ),
     );
@@ -79,40 +91,29 @@ class _HomeTodoViewState extends State<HomeTodoView> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  _buildMaterialSegmentedControl(),
-                ],
-              ),
-              const SizedBox(
-                height: 8,
-              ),
-              Expanded(child: _listWidgets[_currentSelection]),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Todos'),
+      ),
+      body: Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                _materialSegmentedControl(),
+              ],
+            ),
+            Expanded(child: _listWidgets[_currentSelection]),
+          ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            _gotoAddTodoPage();
-          },
-          child: const Icon(Icons.add),
-        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _gotoAddTodoPage();
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
-
-  final Map<int, Widget> _children = {
-    0: const Text('All'),
-    1: const Text('Completed'),
-    2: const Text('Incomplete'),
-  };
-
-  // Holds all indices of children to be disabled.
-  // Set this list either null or empty to have no children disabled.
-  final List<int> _disabledIndices = [];
 }

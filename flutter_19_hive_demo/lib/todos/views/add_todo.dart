@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_19_hive_demo/todos/bloc/todo_bloc.dart';
 import 'package:flutter_19_hive_demo/todos/models/todo_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 
 class AddTodoPage extends StatelessWidget {
   const AddTodoPage({Key? key}) : super(key: key);
@@ -37,9 +38,19 @@ class _AddTodoViewState extends State<AddTodoView> {
   final TextEditingController _titleTodo = TextEditingController();
   final TextEditingController _descriptionTodo = TextEditingController();
   bool isCompleted = false;
+  bool idValidTitle = true;
+
+  String _generateID() {
+    var uuid = const Uuid();
+
+    // Generate a v1 (time-based) id
+    String v1 = uuid.v1();
+    return v1;
+  }
 
   void _addTodo() {
     Todo newTodo = Todo(
+      id: _generateID(),
       title: _titleTodo.text,
       description: _descriptionTodo.text,
       isCompleted: isCompleted,
@@ -49,13 +60,76 @@ class _AddTodoViewState extends State<AddTodoView> {
 
   Widget _createElevatedButton(String title) {
     return Expanded(
-      child: ElevatedButton(onPressed: () {
-        if (title == 'Cancel') {
-          Navigator.pop(context);
-        } else {
-          _addTodo();
-        }
-      }, child: Text(title)),
+      child: ElevatedButton(
+          onPressed: () {
+            if (title == 'Cancel') {
+              Navigator.pop(context);
+            } else {
+              _addTodo();
+            }
+          },
+          child: Text(title)),
+    );
+  }
+
+  void _updateTodoStatus(bool currentStatus) {
+    isCompleted = !currentStatus;
+    setState(() {});
+  }
+
+  Widget _titleTodoTextFormField() {
+    return TextFormField(
+      controller: _titleTodo,
+      onChanged: (value){
+        idValidTitle = value.isNotEmpty;
+        setState(() {
+
+        });
+      },
+      decoration: InputDecoration(
+        labelText: 'Title',
+        hintText: 'title of todo',
+        errorText: idValidTitle ? null: 'nhap di' ,
+      ),
+    );
+  }
+
+  Widget _descriptionTodoTextFormField() {
+    return TextFormField(
+      controller: _descriptionTodo,
+      maxLines: null,
+      decoration: const InputDecoration(
+          hintText: 'description', labelText: 'Description'),
+    );
+  }
+
+  Widget _isCompletedTodo() {
+    return InkWell(
+      onTap: () {
+        _updateTodoStatus(isCompleted);
+      },
+      child: Row(
+        children: [
+          Checkbox(
+              value: isCompleted,
+              onChanged: (value) {
+                _updateTodoStatus(!value!);
+              }),
+          const Text('Completed'),
+        ],
+      ),
+    );
+  }
+
+  Widget _confirmFormBottomButton() {
+    return Row(
+      children: [
+        _createElevatedButton('Cancel'),
+        const SizedBox(
+          width: 8,
+        ),
+        _createElevatedButton('Save'),
+      ],
     );
   }
 
@@ -73,46 +147,17 @@ class _AddTodoViewState extends State<AddTodoView> {
               child: ListView.builder(
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    return TextFormField(
-                      controller: _titleTodo,
-                      decoration: const InputDecoration(
-                        labelText: 'Title',
-                        hintText: 'title of todo',
-                      ),
-                    );
+                    return _titleTodoTextFormField();
                   }
                   if (index == 1) {
-                    return TextFormField(
-                      controller: _descriptionTodo,
-                      maxLines: null,
-                      decoration: const InputDecoration(
-                          hintText: 'description', labelText: 'Description'),
-                    );
+                    return _descriptionTodoTextFormField();
                   }
-                  return Row(
-                    children: [
-                      Checkbox(
-                          value: isCompleted,
-                          onChanged: (value) {
-                            isCompleted = value!;
-                            setState(() {});
-                          }),
-                      const Text('Completed'),
-                    ],
-                  );
+                  return _isCompletedTodo();
                 },
                 itemCount: 3,
               ),
             ),
-            Row(
-              children: [
-                _createElevatedButton('Cancel'),
-                const SizedBox(
-                  width: 8,
-                ),
-                _createElevatedButton('Save'),
-              ],
-            ),
+            _confirmFormBottomButton(),
           ],
         ),
       ),

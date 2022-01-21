@@ -4,10 +4,19 @@ abstract class TodoEvent extends Equatable {
   const TodoEvent();
 }
 
-class TodoLoadAllEvent extends TodoEvent {
+class TodoInitBoxEvent extends TodoEvent {
   @override
   List<Object?> get props => [];
 }
+
+class TodoLoadDataEvent extends TodoEvent {
+  final TodoType type;
+  const TodoLoadDataEvent(this.type);
+  @override
+  List<Object?> get props => [];
+}
+
+
 
 class TodoAddEvent extends TodoEvent {
   final Todo todo;
@@ -31,7 +40,9 @@ class TodoDeleteEvent extends TodoEvent {
 
 class TodoReloadDataEvent extends TodoEvent {
   final TodoType type;
+
   const TodoReloadDataEvent(this.type);
+
   @override
   List<Object?> get props => [type];
 }
@@ -47,17 +58,19 @@ class TodoLoadIncompleteEvent extends TodoEvent {
 }
 
 class TodoViewDetailEvent extends TodoEvent {
-  final int index;
-  const TodoViewDetailEvent(this.index);
+  final String id;
+
+  const TodoViewDetailEvent(this.id);
+
   @override
-  List<Object?> get props => [index];
+  List<Object?> get props => [id];
 }
 
 class TodoModifyEvent extends TodoEvent {
   final Todo todo;
+
   const TodoModifyEvent(this.todo);
+
   @override
   List<Object?> get props => [todo];
 }
-
-

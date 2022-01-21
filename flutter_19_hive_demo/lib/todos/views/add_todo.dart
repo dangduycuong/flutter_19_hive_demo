@@ -13,16 +13,7 @@ class AddTodoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => TodoBloc(),
-      child: BlocConsumer<TodoBloc, TodoState>(
-        builder: (context, state) {
-          return const AddTodoView();
-        },
-        listener: (context, state) {
-          if (state is TodoAddState) {
-            Navigator.pop(context);
-          }
-        },
-      ),
+      child: const AddTodoView(),
     );
   }
 }
@@ -35,6 +26,7 @@ class AddTodoView extends StatefulWidget {
 }
 
 class _AddTodoViewState extends State<AddTodoView> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleTodo = TextEditingController();
   final TextEditingController _descriptionTodo = TextEditingController();
   bool isCompleted = false;
@@ -65,55 +57,62 @@ class _AddTodoViewState extends State<AddTodoView> {
             if (title == 'Cancel') {
               Navigator.pop(context);
             } else {
-              _addTodo();
+              if (_formKey.currentState!.validate()) {
+                _addTodo();
+              }
             }
           },
           child: Text(title)),
     );
   }
 
-  void _updateTodoStatus(bool currentStatus) {
-    isCompleted = !currentStatus;
-    setState(() {});
-  }
-
   Widget _titleTodoTextFormField() {
     return TextFormField(
       controller: _titleTodo,
-      onChanged: (value){
-        idValidTitle = value.isNotEmpty;
-        setState(() {
-
-        });
-      },
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         labelText: 'Title',
-        hintText: 'title of todo',
-        errorText: idValidTitle ? null: 'nhap di' ,
+        hintText: 'Enter title',
       ),
+      validator: (text) {
+        if (text == null || text.isEmpty) {
+          return 'todo title cannot empty';
+        }
+        return null;
+      },
     );
   }
 
   Widget _descriptionTodoTextFormField() {
     return TextFormField(
       controller: _descriptionTodo,
-      maxLines: null,
+      maxLines: 5,
+      autocorrect: true,
       decoration: const InputDecoration(
-          hintText: 'description', labelText: 'Description'),
+        labelText: 'Description',
+        hintText: 'Enter description',
+      ),
+      validator: (text) {
+        if (text == null || text.isEmpty) {
+          return 'todo description cannot empty';
+        }
+        return null;
+      },
     );
   }
 
-  Widget _isCompletedTodo() {
+  Widget _isCompletedCheckboxItem() {
     return InkWell(
       onTap: () {
-        _updateTodoStatus(isCompleted);
+        isCompleted = !isCompleted;
+        setState(() {});
       },
       child: Row(
         children: [
           Checkbox(
               value: isCompleted,
               onChanged: (value) {
-                _updateTodoStatus(!value!);
+                isCompleted = value!;
+                setState(() {});
               }),
           const Text('Completed'),
         ],
@@ -121,46 +120,60 @@ class _AddTodoViewState extends State<AddTodoView> {
     );
   }
 
-  Widget _confirmFormBottomButton() {
-    return Row(
-      children: [
-        _createElevatedButton('Cancel'),
-        const SizedBox(
-          width: 8,
-        ),
-        _createElevatedButton('Save'),
-      ],
+  Widget _formTodo() {
+    return Expanded(
+      child: ListView.builder(
+        itemBuilder: (context, index) {
+          switch (index) {
+            case 0:
+              return _titleTodoTextFormField();
+            case 1:
+              return _descriptionTodoTextFormField();
+            default:
+              return _isCompletedCheckboxItem();
+          }
+        },
+        itemCount: 3,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add new todo'),
-      ),
-      body: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _titleTodoTextFormField();
-                  }
-                  if (index == 1) {
-                    return _descriptionTodoTextFormField();
-                  }
-                  return _isCompletedTodo();
-                },
-                itemCount: 3,
+    return BlocConsumer<TodoBloc, TodoState>(
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Add New Todo'),
+          ),
+          body: Container(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  _formTodo(),
+                  Row(
+                    children: [
+                      _createElevatedButton('Cancel'),
+                      const SizedBox(
+                        width: 8,
+                      ),
+                      _createElevatedButton('Save'),
+                    ],
+                  ),
+                ],
               ),
             ),
-            _confirmFormBottomButton(),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
+      listener: (context, state) {
+        if (state is TodoAddState) {
+          Navigator.pop(context);
+        }
+      },
     );
   }
 }

@@ -13,7 +13,7 @@ class HomeTodoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => TodoBloc(),
+      create: (_) => TodoBloc()..add(TodoInitBoxEvent()),
       child: const HomeView(),
     );
   }
@@ -37,8 +37,8 @@ class _HomeViewState extends State<HomeView> {
 
   final List<Widget> _listWidgets = const [
     AllTodosView(),
-    CompletedTodosPage(),
-    IncompleteTodosPage(),
+    CompletedTodosView(),
+    IncompleteTodosView(),
   ];
 
   TodoType typeScreen = TodoType.all;

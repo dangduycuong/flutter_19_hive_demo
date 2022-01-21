@@ -10,9 +10,9 @@ class TodoDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int index = ModalRoute.of(context)!.settings.arguments as int;
+    final String id = ModalRoute.of(context)!.settings.arguments as String;
     return BlocProvider(
-      create: (_) => TodoBloc()..add(TodoViewDetailEvent(index)),
+      create: (_) => TodoBloc()..add(TodoViewDetailEvent(id)),
       child: const TodoDetailView(),
     );
   }
@@ -26,6 +26,7 @@ class TodoDetailView extends StatefulWidget {
 }
 
 class _TodoDetailViewState extends State<TodoDetailView> {
+  final _formKey = GlobalKey<FormState>();
   String id = '';
   TextEditingController _titleTodo = TextEditingController();
   TextEditingController _descriptionTodo = TextEditingController();
@@ -48,7 +49,9 @@ class _TodoDetailViewState extends State<TodoDetailView> {
             if (title == 'Cancel') {
               Navigator.pop(context);
             } else {
-              _modifyTodo();
+              if (_formKey.currentState!.validate()) {
+                _modifyTodo();
+              }
             }
           },
           child: Text(title)),
@@ -58,9 +61,15 @@ class _TodoDetailViewState extends State<TodoDetailView> {
   Widget _titleTodoTextFormField() {
     return TextFormField(
       controller: _titleTodo,
+      validator: (text) {
+        if (text == null || text.isEmpty) {
+          return 'Todo title cannot empty';
+        }
+        return null;
+      },
       decoration: const InputDecoration(
         labelText: 'Title',
-        hintText: 'title of todo',
+        hintText: 'Enter title',
       ),
     );
   }
@@ -68,9 +77,16 @@ class _TodoDetailViewState extends State<TodoDetailView> {
   Widget _descriptionTodoTextFormField() {
     return TextFormField(
       controller: _descriptionTodo,
-      maxLines: null,
+      validator: (text) {
+        if (text == null || text.isEmpty) {
+          return 'Todo description cannot empty';
+        }
+        return null;
+      },
+      maxLines: 5,
+      autocorrect: true,
       decoration: const InputDecoration(
-          hintText: 'description', labelText: 'Description'),
+          hintText: 'Enter description', labelText: 'Todo description'),
     );
   }
 
@@ -84,42 +100,45 @@ class _TodoDetailViewState extends State<TodoDetailView> {
           ),
           body: Container(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return _titleTodoTextFormField();
-                      }
-                      if (index == 1) {
-                        return _descriptionTodoTextFormField();
-                      }
-                      return Row(
-                        children: [
-                          Checkbox(
-                              value: isCompleted,
-                              onChanged: (value) {
-                                isCompleted = value!;
-                                setState(() {});
-                              }),
-                          const Text('Completed'),
-                        ],
-                      );
-                    },
-                    itemCount: 3,
-                  ),
-                ),
-                Row(
-                  children: [
-                    _createElevatedButton('Cancel'),
-                    const SizedBox(
-                      width: 8,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return _titleTodoTextFormField();
+                        }
+                        if (index == 1) {
+                          return _descriptionTodoTextFormField();
+                        }
+                        return Row(
+                          children: [
+                            Checkbox(
+                                value: isCompleted,
+                                onChanged: (value) {
+                                  isCompleted = value!;
+                                  setState(() {});
+                                }),
+                            const Text('Completed'),
+                          ],
+                        );
+                      },
+                      itemCount: 3,
                     ),
-                    _createElevatedButton('Save'),
-                  ],
-                ),
-              ],
+                  ),
+                  Row(
+                    children: [
+                      _createElevatedButton('Cancel'),
+                      const SizedBox(
+                        width: 8,
+                      ),
+                      _createElevatedButton('Save'),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );

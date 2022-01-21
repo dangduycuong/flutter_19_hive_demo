@@ -13,7 +13,8 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
   List<Todo> todos = [];
 
   TodoBloc() : super(TodoInitial()) {
-    on<TodoLoadAllEvent>(_loadAllTodos);
+    on<TodoInitBoxEvent>(_initBox);
+    on<TodoLoadDataEvent>(_loadTodosData);
     on<TodoAddEvent>(_addTodo);
     on<TodoReloadDataEvent>(_reloadData);
     on<TodoLoadCompletedEvent>(_loadTodoCompleted);
@@ -23,11 +24,15 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     on<TodoDeleteEvent>(_deleteTodo);
   }
 
-  void _loadAllTodos(TodoLoadAllEvent event, Emitter<TodoState> emit) {
-    emit(TodoLoadingDataState());
+  void _initBox(TodoInitBoxEvent event, Emitter<TodoState> emit) {
     box = Hive.box('todosBox');
+  }
 
-    int count = getCount(TodoType.all);
+  void _loadTodosData(TodoLoadDataEvent event, Emitter<TodoState> emit) {
+    emit(TodoLoadingDataState());
+
+
+    int count = getCount(event.type);
     emit(TodoLoadDataSuccessState(count));
   }
 
@@ -107,9 +112,10 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
   void _getTodoDetail(
       TodoViewDetailEvent event, Emitter<TodoState> emit) async {
     box = Hive.box('todosBox');
-    Todo todo = box.getAt(event.index) as Todo;
+    int index = _getIndexOfItem(event.id);
+    Todo todo = box.getAt(index) as Todo;
 
-    emit(TodoDetailState(event.index, todo));
+    emit(TodoDetailState(index, todo));
   }
 
   int _getIndexOfItem(String id) {
